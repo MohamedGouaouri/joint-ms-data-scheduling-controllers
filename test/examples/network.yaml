@@ -1,0 +1,33 @@
+apiVersion: crd.cs.phd.uqtr/v1
+kind: EdgeNetworkTopology
+metadata:
+  name: example-edge-topology
+spec:
+  edges:
+    - name: edge-node-1
+      ip: 192.168.1.1
+      links:
+        - edgeNodeRef: edge-node-2
+          bandwidthCapacity: 1000
+          interfaceName: eth0
+          interfaceIp: 10.0.0.1
+        - edgeNodeRef: edge-node-3
+          bandwidthCapacity: 500
+          interfaceName: eth1
+          interfaceIp: 10.0.0.2
+
+    - name: edge-node-2
+      ip: 192.168.1.2
+      links:
+        - edgeNodeRef: edge-node-1
+          bandwidthCapacity: 1000
+          interfaceName: eth0
+          interfaceIp: 10.0.0.3
+
+    - name: edge-node-3
+      ip: 192.168.1.3
+      links:
+        - edgeNodeRef: edge-node-1
+          bandwidthCapacity: 500
+          interfaceName: eth0
+          interfaceIp: 10.0.0.4

@@ -1,0 +1,141 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: pause
+          image: k8s.gcr.io/pause:3.1
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: pause
+          image: k8s.gcr.io/pause:3.1
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache
+  template:
+    metadata:
+      labels:
+        app: cache
+    spec:
+      containers:
+        - name: pause
+          image: k8s.gcr.io/pause:3.1
+          resources:
+            requests:
+              cpu: "30m"
+              memory: "32Mi"
+            limits:
+              cpu: "30m"
+              memory: "32Mi"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: pause
+          image: k8s.gcr.io/pause:3.1
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+
+---
+apiVersion: crd.cs.phd.uqtr/v1
+kind: MicroserviceApplication
+metadata:
+  name: example-microservice-app
+spec:
+  edgeNetwork:
+    kind: EdgeNetworkTopology
+    apiVersion: crd.cs.phd.uqtr/v1
+  microservices:
+    - deploymentRef: frontend-deployment
+      namespace: default
+      name: frontend
+      dependencies:
+        - microserviceRef: backend
+          minBandwidth: 100
+        - microserviceRef: cache
+          minBandwidth: 50
+
+    - deploymentRef: backend-deployment
+      namespace: default
+      name: backend
+      dependencies:
+        - microserviceRef: database
+          minBandwidth: 200
+
+    - deploymentRef: cache-deployment
+      namespace: default
+      name: cache
+      dependencies: []
+
+    - deploymentRef: database-deployment
+      namespace: default
+      name: database
+      dependencies: []

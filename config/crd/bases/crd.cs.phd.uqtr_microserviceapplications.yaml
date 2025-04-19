@@ -1,0 +1,92 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: microserviceapplications.crd.cs.phd.uqtr
+spec:
+  group: crd.cs.phd.uqtr
+  names:
+    kind: MicroserviceApplication
+    listKind: MicroserviceApplicationList
+    plural: microserviceapplications
+    singular: microserviceapplication
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: MicroserviceApplication is the Schema for the microserviceapplications
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MicroserviceApplicationSpec defines the desired state of
+              MicroserviceApplication.
+            properties:
+              edgeNetwork:
+                description: |-
+                  Foo is an example field of MicroserviceApplication. Edit microserviceapplication_types.go to remove/update
+                  Foo string `json:"foo,omitempty"`
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
+              microservices:
+                items:
+                  properties:
+                    dependencies:
+                      items:
+                        properties:
+                          microserviceRef:
+                            type: string
+                          minBandwidth:
+                            type: integer
+                        type: object
+                      type: array
+                    deploymentRef:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    volumeClaim:
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            description: MicroserviceApplicationStatus defines the observed state
+              of MicroserviceApplication.
+            properties:
+              ranks:
+                additionalProperties:
+                  type: integer
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
