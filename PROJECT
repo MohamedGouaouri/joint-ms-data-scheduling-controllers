@@ -26,4 +26,13 @@ resources:
   kind: EdgeNetworkTopology
   path: github.com/MohamedGouaouri/ms-app-controller/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cs.phd.uqtr
+  group: crd
+  kind: VolumeAllocation
+  path: github.com/MohamedGouaouri/ms-app-controller/api/v1
+  version: v1
 version: "3"

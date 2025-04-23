@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -74,12 +75,17 @@ func (r *MicroserviceApplicationReconciler) Reconcile(ctx context.Context, req c
 		logger.Info("Total CPU for microservice", "name", ms.Name, "cpu(millicores)", demands)
 		ranks[ms.Name] = r.Rank(app, ms, demands)
 
+		// Add annotations to the pods
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/microservice", ms.Name)
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/rank", fmt.Sprintf("%s", ranks[ms.Name]))
+
 	}
 	app.Status.Ranks = ranks
 	if err := r.Status().Update(ctx, &app); err != nil {
 		logger.Error(err, "unable to update Application status")
 		return ctrl.Result{}, err
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -136,6 +142,44 @@ func (r *MicroserviceApplicationReconciler) GetMicroserviceCPUDemands(ctx contex
 		}
 	}
 	return totalCPU.MilliValue(), nil
+}
+
+func (r *MicroserviceApplicationReconciler) AnnotatePod(ctx context.Context, ms crdv1.Microservice, annotationKey, annotationValue string) error {
+	logger := logf.FromContext(ctx)
+
+	var deployment appsv1.Deployment
+	depNamespaced := types.NamespacedName{
+		Namespace: ms.Namespace,
+		Name:      ms.DeploymentRef,
+	}
+	if err := r.Get(ctx, depNamespaced, &deployment); err != nil {
+		logger.Error(err, "unable to fetch deployment")
+		return err
+	}
+	podList := &corev1.PodList{}
+	labelSelector := client.MatchingLabels(deployment.Spec.Selector.MatchLabels)
+	if err := r.List(ctx, podList, client.InNamespace(ms.Namespace), labelSelector); err != nil {
+		logger.Error(err, "unable to list pods for deployment", "deployment", depNamespaced)
+		return err
+	}
+	for _, pod := range podList.Items {
+		// Annotate Pod
+		p := pod
+
+		if p.Annotations == nil {
+			p.Annotations = make(map[string]string)
+		}
+
+		p.Annotations[annotationKey] = annotationValue
+
+		if err := r.Update(ctx, &p); err != nil {
+			logger.Error(err, "failed to update pod annotation", "pod", p.Name)
+			// Optionally continue to next pod instead of failing all
+			continue
+		}
+		logger.Info("Annotated pod", "pod", p.Name)
+	}
+	return nil
 }
 
 func maxOf(arr []int) int {

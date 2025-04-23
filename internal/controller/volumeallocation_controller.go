@@ -1,0 +1,112 @@
+/*
+Copyright 2025.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controller
+
+import (
+	"context"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	crdv1 "github.com/MohamedGouaouri/ms-app-controller/api/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
+)
+
+// VolumeAllocationReconciler reconciles a VolumeAllocation object
+type VolumeAllocationReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+
+// +kubebuilder:rbac:groups=crd.cs.phd.uqtr,resources=volumeallocations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=crd.cs.phd.uqtr,resources=volumeallocations/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=crd.cs.phd.uqtr,resources=volumeallocations/finalizers,verbs=update
+
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the VolumeAllocation object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile
+func (r *VolumeAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := logf.FromContext(ctx)
+
+	// TODO(user): your logic here
+	// Fetch allocation request
+	var allocationRequest crdv1.VolumeAllocation
+	if err := r.Get(ctx, req.NamespacedName, &allocationRequest); err != nil {
+		logger.Error(err, "unable to fetch VolumeAllocation request")
+		// Ignore not-found errors (e.g., if the resource was deleted)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Create PVC
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      allocationRequest.Name + "-pvc",
+			Namespace: allocationRequest.Namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+			},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse(allocationRequest.Spec.VolumeSize),
+				},
+			},
+			StorageClassName: &allocationRequest.Spec.StorageClassName,
+		},
+	}
+	// Set the controller as owner and controller
+	if err := ctrl.SetControllerReference(&allocationRequest, pvc, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Create the PVC if it doesn't exist
+	var existingPVC corev1.PersistentVolumeClaim
+	err := r.Get(ctx, client.ObjectKey{Name: pvc.Name, Namespace: pvc.Namespace}, &existingPVC)
+	if err != nil && client.IgnoreNotFound(err) == nil {
+		logger.Info("Creating PVC", "pvc", pvc.Name)
+		if err := r.Create(ctx, pvc); err != nil {
+			logger.Error(err, "failed to create PVC")
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		logger.Error(err, "error checking for existing PVC")
+		return ctrl.Result{}, err
+	} else {
+		logger.Info("PVC already exists", "pvc", pvc.Name)
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *VolumeAllocationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&crdv1.VolumeAllocation{}).
+		Named("volumeallocation").
+		Complete(r)
+}

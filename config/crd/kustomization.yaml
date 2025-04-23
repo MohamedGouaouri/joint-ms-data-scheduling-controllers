@@ -4,6 +4,7 @@
 resources:
 - bases/crd.cs.phd.uqtr_microserviceapplications.yaml
 - bases/crd.cs.phd.uqtr_edgenetworktopologies.yaml
+- bases/crd.cs.phd.uqtr_volumeallocations.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

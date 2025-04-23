@@ -1,0 +1,9 @@
+apiVersion: crd.cs.phd.uqtr/v1
+kind: VolumeAllocation
+metadata:
+  labels:
+    app.kubernetes.io/name: joint-ms-data-scheduling
+    app.kubernetes.io/managed-by: kustomize
+  name: volumeallocation-sample
+spec:
+  # TODO(user): Add fields here

@@ -2,4 +2,5 @@
 resources:
 - crd_v1_microserviceapplication.yaml
 - crd_v1_edgenetworktopology.yaml
+- crd_v1_volumeallocation.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
