@@ -1,4 +1,4 @@
-module github.com/MohamedGouaouri/joint-ms-data-scheduling-controllers
+module github.com/MohamedGouaouri/ms-app-controller
 
 go 1.23.0
 
@@ -99,7 +99,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-
-replace (
-	github.com/MohamedGouaouri/joint-ms-data-scheduling-controllers => ../joint-ms-data-scheduling-controllers
-)
+replace github.com/MohamedGouaouri/joint-ms-data-scheduling-controllers => ../joint-ms-data-scheduling-controllers
