@@ -1,4 +1,4 @@
-module github.com/MohamedGouaouri/ms-app-controller
+module github.com/MohamedGouaouri/joint-ms-data-scheduling-controllers
 
 go 1.23.0
 
