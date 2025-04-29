@@ -77,7 +77,7 @@ func (r *MicroserviceApplicationReconciler) Reconcile(ctx context.Context, req c
 
 		// Add annotations to the pods
 		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/microservice", ms.Name)
-		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/rank", fmt.Sprintf("%s", ranks[ms.Name]))
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/rank", fmt.Sprintf("%d", ranks[ms.Name]))
 
 	}
 	app.Status.Ranks = ranks

@@ -18,10 +18,13 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -62,10 +65,22 @@ func (r *VolumeAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// Create PVC
+	annotations := make(map[string]string)
+	edgeTopologyName := types.NamespacedName{
+		Name:      allocationRequest.Spec.EdgeNetworkTopology,
+		Namespace: allocationRequest.Namespace,
+	}
+	volumeAllocation := r.DistributedVolumeAllocation(ctx, allocationRequest, edgeTopologyName, 3) // TODO, i need to change kmax to be configurable
+	annotation := ""
+	for edge, allocation := range volumeAllocation {
+		annotation += fmt.Sprintf("%s:%d", edge, allocation) + ","
+	}
+	annotations["volumeallocation"] = annotation
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      allocationRequest.Name + "-pvc",
-			Namespace: allocationRequest.Namespace,
+			Name:        allocationRequest.Name + "-pvc",
+			Namespace:   allocationRequest.Namespace,
+			Annotations: annotations,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -103,10 +118,102 @@ func (r *VolumeAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
+func (r *VolumeAllocationReconciler) DistributedVolumeAllocation(ctx context.Context, allocationRequest crdv1.VolumeAllocation, edgeTopologyName types.NamespacedName, kMax int) map[string]int {
+	logger := logf.FromContext(ctx)
+	var edgeNetworkTopology crdv1.EdgeNetworkTopology
+
+	if err := r.Get(ctx, edgeTopologyName, &edgeNetworkTopology); err != nil {
+		logger.Error(err, "unable to fetch EdgeNetworkTopology")
+		return nil
+	}
+
+	volumeQuantity, err := resource.ParseQuantity(allocationRequest.Spec.VolumeSize)
+	if err != nil {
+		logger.Error(err, "unable to parse volume size")
+		return nil
+	}
+	blocks := int(volumeQuantity.Value() / (1024 * 1024)) // Convert bytes to MB
+
+	result := make(map[string]int)
+
+	eStar := allocationRequest.Spec.MicroservicePlacement
+	remaining := blocks
+
+	for k := 0; k <= kMax; k++ {
+		neighbors := KHopNeighbors(edgeNetworkTopology.Spec.Edges, eStar, k)
+
+		// For now, sort neighbors alphabetically (could sort by affinity later)
+		sort.Strings(neighbors)
+
+		for _, e := range neighbors {
+			available := r.GetAvailableDisk(e)
+			if remaining > 0 && available > 0 {
+				alloc := min(remaining, available)
+				result[e] += alloc
+				UpdateDiskAvailability(e, available-alloc)
+				remaining -= alloc
+			}
+		}
+
+		if remaining == 0 {
+			break
+		}
+	}
+
+	// if remaining > 0 {
+	// result["cloud"] += remaining // fallback to cloud
+	// }
+
+	return result
+}
+
+// Find K-hop neighbors of an edge node
+func KHopNeighbors(edges []crdv1.EdgeNode, start string, k int) []string {
+	// BFS to find k-hop neighbors
+	visited := make(map[string]bool)
+	current := []string{start}
+	visited[start] = true
+
+	for depth := 0; depth < k; depth++ {
+		next := []string{}
+		for _, node := range current {
+			for _, e := range edges {
+				if e.Name == node {
+					for _, link := range e.Links {
+						if !visited[link.EdgeNodeRef] {
+							visited[link.EdgeNodeRef] = true
+							next = append(next, link.EdgeNodeRef)
+						}
+					}
+				}
+			}
+		}
+		current = next
+	}
+
+	return current
+}
+
+func (r *VolumeAllocationReconciler) GetAvailableDisk(node string) int {
+	// TODO: Hook into actual storage monitoring or state cache
+	return 10240 // Placeholder: 10Gi in MB
+}
+
+func UpdateDiskAvailability(node string, newAvailable int) {
+	// TODO: Update the disk availability in the actual state or cache
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *VolumeAllocationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&crdv1.VolumeAllocation{}).
 		Named("volumeallocation").
 		Complete(r)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

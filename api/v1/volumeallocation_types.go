@@ -32,10 +32,12 @@ type Allocation struct {
 type VolumeAllocationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	StorageClassName string     `json:"storageClassName,omitempty"`
-	Microservice     string     `json:"microservice,omitempty"`
-	VolumeSize       string     `json:"volumeSize,omitempty"`
-	Allocations      Allocation `json:"allocations,omitempty"`
+	// Note: Storage class must be set to our custom sotrage class for proper storage allocation
+	StorageClassName      string `json:"storageClassName,omitempty"`
+	Microservice          string `json:"microservice,omitempty"`
+	MicroservicePlacement string `json:"microservicePlacement,omitempty"`
+	VolumeSize            string `json:"volumeSize,omitempty"`
+	EdgeNetworkTopology   string `json:"edgeNetworkTopology,omitempty"`
 }
 
 // VolumeAllocationStatus defines the observed state of VolumeAllocation.
