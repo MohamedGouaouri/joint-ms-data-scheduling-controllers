@@ -14,6 +14,7 @@ spec:
       labels:
         app: frontend
     spec:
+      schedulerName: scheduler-plugins-scheduler
       containers:
         - name: pause
           image: k8s.gcr.io/pause:3.1
@@ -40,6 +41,7 @@ spec:
       labels:
         app: backend
     spec:
+      schedulerName: scheduler-plugins-scheduler
       containers:
         - name: pause
           image: k8s.gcr.io/pause:3.1
@@ -66,6 +68,7 @@ spec:
       labels:
         app: cache
     spec:
+      schedulerName: scheduler-plugins-scheduler
       containers:
         - name: pause
           image: k8s.gcr.io/pause:3.1
@@ -93,6 +96,7 @@ spec:
       labels:
         app: database
     spec:
+      schedulerName: scheduler-plugins-scheduler
       containers:
         - name: pause
           image: k8s.gcr.io/pause:3.1
@@ -117,6 +121,8 @@ spec:
     - deploymentRef: frontend-deployment
       namespace: default
       name: frontend
+      volumeSize: 1Gi
+      volumeClaim: frontend-claim
       dependencies:
         - microserviceRef: backend
           minBandwidth: 100
@@ -126,6 +132,8 @@ spec:
     - deploymentRef: backend-deployment
       namespace: default
       name: backend
+      volumeSize: 1Gi
+      volumeClaim: backend-claim
       dependencies:
         - microserviceRef: database
           minBandwidth: 200
@@ -133,9 +141,13 @@ spec:
     - deploymentRef: cache-deployment
       namespace: default
       name: cache
+      volumeSize: 2Gi
+      volumeClaim: cache-claim
       dependencies: []
 
     - deploymentRef: database-deployment
       namespace: default
       name: database
+      volumeSize: 3Gi
+      volumeClaim: database-claim
       dependencies: []

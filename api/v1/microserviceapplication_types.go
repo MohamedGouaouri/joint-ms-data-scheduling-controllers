@@ -33,6 +33,7 @@ type Microservice struct {
 	DeploymentRef string                   `json:"deploymentRef,omitempty"`
 	Namespace     string                   `json:"namespace,omitempty"`
 	VolumeClaim   string                   `json:"volumeClaim,omitempty"`
+	VolumeSize    string                   `json:"volumeSize,omitempty"`
 	Dependencies  []MicroserviceDependency `json:"dependencies,omitempty"`
 }
 type MicroserviceDependency struct {

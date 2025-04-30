@@ -1,7 +1,7 @@
 apiVersion: crd.cs.phd.uqtr/v1
 kind: EdgeNetworkTopology
 metadata:
-  name: example-edge-topology
+  name: test-topology
 spec:
   edges:
     - name: edge-node-1

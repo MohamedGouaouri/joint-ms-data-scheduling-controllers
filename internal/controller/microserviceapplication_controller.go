@@ -54,10 +54,9 @@ type MicroserviceApplicationReconciler struct {
 func (r *MicroserviceApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
 
-	// TODO(user): your logic here
 	var app crdv1.MicroserviceApplication
 	if err := r.Get(ctx, req.NamespacedName, &app); err != nil {
-		logger.Error(err, "unable to fetch Application")
+		logger.Error(err, "unable to fetch MicroserviceApplication resource")
 		// Ignore not-found errors (e.g., if the resource was deleted)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -76,14 +75,33 @@ func (r *MicroserviceApplicationReconciler) Reconcile(ctx context.Context, req c
 		ranks[ms.Name] = r.Rank(app, ms, demands)
 
 		// Add annotations to the pods
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/application", app.Name)
 		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/microservice", ms.Name)
 		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/rank", fmt.Sprintf("%d", ranks[ms.Name]))
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/claim_name", ms.VolumeClaim)
+		// Fetch the claim size
+		r.AnnotatePod(ctx, ms, "topology-aware-scheduling.cs.phd.uqtr/volume_size", ms.VolumeSize)
 
 	}
 	app.Status.Ranks = ranks
 	if err := r.Status().Update(ctx, &app); err != nil {
 		logger.Error(err, "unable to update Application status")
 		return ctrl.Result{}, err
+	}
+
+	// Get the deployments managed by the Microservice application and attach them to the resoures
+	for _, ms := range app.Spec.Microservices {
+		objName := types.NamespacedName{
+			Name:      ms.DeploymentRef,
+			Namespace: ms.Namespace,
+		}
+		var dep appsv1.Deployment
+		if err := r.Get(ctx, objName, &dep); err != nil {
+			if err := ctrl.SetControllerReference(&app, &dep, r.Scheme); err != nil {
+				logger.Error(err, "unable to set reference")
+				// return ctrl.Result{}, err
+			}
+		}
 	}
 
 	return ctrl.Result{}, nil

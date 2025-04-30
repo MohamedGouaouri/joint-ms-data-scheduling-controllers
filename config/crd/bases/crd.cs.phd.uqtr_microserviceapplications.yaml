@@ -73,6 +73,8 @@ spec:
                       type: string
                     volumeClaim:
                       type: string
+                    volumeSize:
+                      type: string
                   type: object
                 type: array
             type: object

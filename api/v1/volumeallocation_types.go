@@ -24,8 +24,8 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type Allocation struct {
-	Node string `json:"node,omitempty"`
-	Size int    `json:"size,omitempty"`
+	Node string `json:"node,omitempty" protobuf:"bytes,1,opt,name=node"`
+	Size int    `json:"size,omitempty" protobuf:"bytes,2,opt,name=size"`
 }
 
 // VolumeAllocationSpec defines the desired state of VolumeAllocation.
@@ -33,11 +33,11 @@ type VolumeAllocationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// Note: Storage class must be set to our custom sotrage class for proper storage allocation
-	StorageClassName      string `json:"storageClassName,omitempty"`
-	Microservice          string `json:"microservice,omitempty"`
-	MicroservicePlacement string `json:"microservicePlacement,omitempty"`
-	VolumeSize            string `json:"volumeSize,omitempty"`
-	EdgeNetworkTopology   string `json:"edgeNetworkTopology,omitempty"`
+	StorageClassName      string `json:"storageClassName,omitempty" protobuf:"bytes,1,opt,name=storageClassName"`
+	Microservice          string `json:"microservice,omitempty" protobuf:"bytes,2,opt,name=microservice"`
+	MicroservicePlacement string `json:"microservicePlacement,omitempty" protobuf:"bytes,3,opt,name=microservicePlacement"`
+	VolumeSize            string `json:"volumeSize,omitempty" protobuf:"bytes,4,opt,name=volumeSize"`
+	EdgeNetworkTopology   string `json:"edgeNetworkTopology,omitempty" protobuf:"bytes,5,opt,name=edgeNetworkTopology"`
 }
 
 // VolumeAllocationStatus defines the observed state of VolumeAllocation.
@@ -52,10 +52,10 @@ type VolumeAllocationStatus struct {
 // VolumeAllocation is the Schema for the volumeallocations API.
 type VolumeAllocation struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec   VolumeAllocationSpec   `json:"spec,omitempty"`
-	Status VolumeAllocationStatus `json:"status,omitempty"`
+	Spec   VolumeAllocationSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status VolumeAllocationStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
 // +kubebuilder:object:root=true

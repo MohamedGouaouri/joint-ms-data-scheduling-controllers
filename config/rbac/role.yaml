@@ -9,6 +9,7 @@ rules:
   resources:
   - edgenetworktopologies
   - microserviceapplications
+  - volumeallocations
   verbs:
   - create
   - delete
@@ -22,6 +23,7 @@ rules:
   resources:
   - edgenetworktopologies/finalizers
   - microserviceapplications/finalizers
+  - volumeallocations/finalizers
   verbs:
   - update
 - apiGroups:
@@ -29,6 +31,7 @@ rules:
   resources:
   - edgenetworktopologies/status
   - microserviceapplications/status
+  - volumeallocations/status
   verbs:
   - get
   - patch
