@@ -24,7 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type EdgeNode struct {
-	Name  string         `json:"name,omitempty"`
+	Name  string         `json:"name"`
 	IP    string         `json:"ip,omitempty"`
 	Links []EdgeNodeLink `json:"links,omitempty"`
 }

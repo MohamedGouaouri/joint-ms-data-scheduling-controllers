@@ -63,6 +63,8 @@ spec:
                       type: array
                     name:
                       type: string
+                  required:
+                  - name
                   type: object
                 type: array
             type: object
